@@ -27,10 +27,15 @@ const Post = ({ post, onUpdate }) => {
   // Like/Unlike mutation
   const likeMutation = useMutation(
     async () => {
-      if (post.is_liked) {
-        await api.delete(`/api/likes/post/${post.id}`);
-      } else {
-        await api.post(`/api/likes/post/${post.id}`);
+      try {
+        if (post.is_liked) {
+          await api.delete(`/api/likes/post/${post.id}`);
+        } else {
+          await api.post(`/api/likes/post/${post.id}`);
+        }
+      } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Failed to update like';
+        throw new Error(errorMessage);
       }
     },
     {
@@ -38,8 +43,8 @@ const Post = ({ post, onUpdate }) => {
         queryClient.invalidateQueries('posts');
         onUpdate?.();
       },
-      onError: () => {
-        toast.error('Failed to update like');
+      onError: (error) => {
+        toast.error(error.message);
       },
     }
   );
