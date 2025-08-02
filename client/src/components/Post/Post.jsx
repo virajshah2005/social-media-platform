@@ -10,7 +10,7 @@ import {
   FiMapPin,
   FiUser,
 } from 'react-icons/fi';
-import axios from 'axios';
+import api from '../../config/axios';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import PostActions from './PostActions';
@@ -28,9 +28,9 @@ const Post = ({ post, onUpdate }) => {
   const likeMutation = useMutation(
     async () => {
       if (post.is_liked) {
-        await axios.delete(`/api/likes/post/${post.id}`);
+        await api.delete(`/api/likes/post/${post.id}`);
       } else {
-        await axios.post(`/api/likes/post/${post.id}`);
+        await api.post(`/api/likes/post/${post.id}`);
       }
     },
     {
