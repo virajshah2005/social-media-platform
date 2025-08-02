@@ -3,6 +3,32 @@ const { pool } = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
+const authenticateSocket = async (socket, next) => {
+  try {
+    const token = socket.handshake.auth.token;
+    
+    if (!token) {
+      return next(new Error('Authentication error'));
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const [users] = await pool.execute(
+      'SELECT id, username, email, full_name, profile_picture, is_verified FROM users WHERE id = ?',
+      [decoded.userId]
+    );
+
+    if (users.length === 0) {
+      return next(new Error('User not found'));
+    }
+
+    socket.user = users[0];
+    next();
+  } catch (error) {
+    next(new Error('Authentication error'));
+  }
+};
+
 const authenticateToken = async (req, res, next) => {
   try {
     const authHeader = req.headers['authorization'];
@@ -67,5 +93,6 @@ const optionalAuth = async (req, res, next) => {
 module.exports = {
   authenticateToken,
   generateToken,
-  optionalAuth
+  optionalAuth,
+  authenticateSocket
 }; 

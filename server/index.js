@@ -5,6 +5,8 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
+const initializeSocket = require('./socket');
 require('dotenv').config();
 
 const { testConnection, initializeDatabase } = require('./config/database');
@@ -103,10 +105,14 @@ const startServer = async () => {
     await testConnection();
     await initializeDatabase();
     
-    app.listen(PORT, '0.0.0.0', () => {
+    const server = http.createServer(app);
+    const io = initializeSocket(server);
+
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Social API server running on port ${PORT}`);
       console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`💾 Database: Connected and initialized`);
+      console.log(`🔌 WebSocket server is running`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
