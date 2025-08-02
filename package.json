@@ -8,7 +8,14 @@
     "server": "nodemon server/index.js",
     "client": "cd client && npm run dev",
     "build": "cd client && npm run build",
-    "install-all": "npm install && cd client && npm install"
+    "install-all": "npm install && cd client && npm install",
+    "test": "concurrently \"cd client && npm test\" \"cd server && npm test\"",
+    "test:e2e": "cd client && npm run test:e2e",
+    "test:e2e:open": "cd client && npm run test:e2e:open",
+    "lint": "concurrently \"cd client && npm run lint\" \"cd server && npm run lint\"",
+    "lint:fix": "concurrently \"cd client && npm run lint:fix\" \"cd server && npm run lint:fix\"",
+    "format": "concurrently \"cd client && npm run format\" \"cd server && npm run format\"",
+    "prepare": "husky install"
   },
   "keywords": ["social-media", "react", "express", "mysql", "fullstack"],
   "author": "Social Team",

@@ -21,7 +21,27 @@ const testConnection = async () => {
     connection.release();
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
-    process.exit(1);
+    if (error.code === 'ECONNREFUSED') {
+      console.error('Make sure your MySQL server is running and accessible');
+    } else if (error.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error('Check your database username and password');
+    } else if (error.code === 'ER_BAD_DB_ERROR') {
+      console.error('Database does not exist. Creating it...');
+      try {
+        const rootPool = mysql.createPool({
+          ...dbConfig,
+          database: undefined
+        });
+        await rootPool.execute(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
+        console.log('✅ Database created successfully');
+        await rootPool.end();
+      } catch (createError) {
+        console.error('Failed to create database:', createError.message);
+        process.exit(1);
+      }
+      return testConnection();
+    }
+    throw error;
   }
 };
 
@@ -51,6 +71,8 @@ const initializeDatabase = async () => {
         followers_count INT DEFAULT 0,
         following_count INT DEFAULT 0,
         posts_count INT DEFAULT 0,
+        is_online BOOLEAN DEFAULT FALSE,
+        last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
@@ -251,6 +273,20 @@ const initializeDatabase = async () => {
         UNIQUE KEY unique_post_view (post_id, viewer_id)
       )
     `);
+
+    // Add online status columns
+    try {
+      await connection.execute(`
+        ALTER TABLE users
+        ADD COLUMN is_online BOOLEAN DEFAULT FALSE,
+        ADD COLUMN last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      `);
+    } catch (error) {
+      // Ignore errors about columns already existing
+      if (!error.message.includes('Duplicate column name')) {
+        throw error;
+      }
+    }
 
     connection.release();
     console.log('✅ Database tables initialized successfully');

@@ -8,6 +8,11 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add retry logic
+  retry: 3,
+  retryDelay: (retryCount) => {
+    return retryCount * 1000; // time interval between retries
+  }
 });
 
 // Request interceptor to add auth token

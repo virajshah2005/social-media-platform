@@ -1,0 +1,4 @@
+-- Add online status columns to users table
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

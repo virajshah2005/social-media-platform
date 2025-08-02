@@ -7,10 +7,12 @@ function initializeSocket(server) {
     cors: {
       origin: process.env.NODE_ENV === 'production' 
         ? 'https://your-domain.com' 
-        : 'http://localhost:5173',
-      methods: ['GET', 'POST'],
-      credentials: true
-    }
+        : ['http://localhost:5173', 'http://localhost:5000'],
+      methods: ['GET', 'POST', 'OPTIONS'],
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization']
+    },
+    transports: ['websocket', 'polling']
   });
 
   // Store online users
@@ -116,5 +118,20 @@ function initializeSocket(server) {
 
   return io;
 }
+
+const activeConnections = new Map();
+
+const cleanupInactiveConnections = () => {
+  const now = Date.now();
+  activeConnections.forEach((lastActivity, socketId) => {
+    if (now - lastActivity > 30 * 60 * 1000) { // 30 minutes timeout
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.disconnect(true);
+      }
+      activeConnections.delete(socketId);
+    }
+  });
+};
 
 module.exports = initializeSocket;

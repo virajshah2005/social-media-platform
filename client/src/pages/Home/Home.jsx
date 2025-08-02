@@ -66,7 +66,7 @@ const Home = () => {
       <div className="space-y-6">
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <LoadingSpinner />
+            <LoadingSpinner size="md" />
           </div>
         ) : posts.length === 0 ? (
           <div className="text-center py-12">

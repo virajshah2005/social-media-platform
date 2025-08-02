@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import { API_BASE_URL, STORAGE_KEYS } from '../config/constants';
+import { STORAGE_KEYS } from '../config/constants';
 import toast from 'react-hot-toast';
+import socketManager from '../services/socketManager';
 
 const SocketContext = createContext();
 
@@ -22,22 +22,20 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     if (user) {
-      // Initialize socket connection
+      // Initialize socket connection using SocketManager
       const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-      const socketInstance = io(API_BASE_URL, {
-        auth: { token },
-      });
+      socketManager.connect(token);
 
-      // Socket event handlers
-      socketInstance.on('connect', () => {
+      // Socket event handlers using SocketManager
+      socketManager.on('connect', () => {
         console.log('Connected to WebSocket server');
       });
 
-      socketInstance.on('user_online', (userId) => {
+      socketManager.on('user_online', (userId) => {
         setOnlineUsers((prev) => new Set([...prev, userId]));
       });
 
-      socketInstance.on('user_offline', (userId) => {
+      socketManager.on('user_offline', (userId) => {
         setOnlineUsers((prev) => {
           const newSet = new Set(prev);
           newSet.delete(userId);
@@ -45,7 +43,7 @@ export const SocketProvider = ({ children }) => {
         });
       });
 
-      socketInstance.on('receive_message', (message) => {
+      socketManager.on('receive_message', (message) => {
         // Handle incoming message
         if (message.conversation_id === activeConversation?.id) {
           // Update conversation messages
@@ -58,7 +56,7 @@ export const SocketProvider = ({ children }) => {
         }
       });
 
-      socketInstance.on('user_typing', ({ userId, username }) => {
+      socketManager.on('user_typing', ({ userId, username }) => {
         // Handle typing indicator
         if (activeConversation?.participants.some(p => p.id === userId)) {
           toast.success(`${username} is typing...`, {
@@ -68,23 +66,23 @@ export const SocketProvider = ({ children }) => {
         }
       });
 
-      socketInstance.on('notification', (notification) => {
+      socketManager.on('notification', (notification) => {
         // Handle real-time notifications
         toast.success(`${notification.from.username} ${notification.content}`);
       });
 
-      socketInstance.on('error', (error) => {
+      socketManager.on('error', (error) => {
         toast.error(error.message);
       });
 
-      setSocket(socketInstance);
+      setSocket(socketManager.socket);
 
       // Cleanup on unmount
       return () => {
-        socketInstance.disconnect();
+        socketManager.disconnect();
       };
     }
-  }, [user]);
+  }, [user, activeConversation]);
 
   const sendMessage = (conversationId, recipientId, content) => {
     if (socket) {

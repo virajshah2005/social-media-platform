@@ -9,7 +9,7 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
   };
 
   return (
-    <div className={`spinner ${sizeClasses[size]} ${className}`}></div>
+        <div className={`spinner ${sizeClasses[size]} ${className}`} data-testid={`loading-spinner-${size}`} role="progressbar"></div>
   );
 };
 
